@@ -106,9 +106,21 @@ class _OnboardingState extends State<Onboarding> {
   void initState() {
     // TODO: implement initState
     _pageController = PageController(initialPage: 0);
+    checkTokenAndNavigate();
     super.initState();
   }
-
+  Future<void> checkTokenAndNavigate() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+    if (token != null) {
+      // Token exists, navigate to another screen (e.g., HomeScreen)
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => const LayoutPage()),
+      );
+    }
+  }
   @override
   void dispose() {
     // TODO: implement dispose

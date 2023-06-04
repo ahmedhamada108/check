@@ -23,7 +23,24 @@ class _RegisterState extends State<Register> {
   final _formKey = GlobalKey<FormState>();
 
   bool isPassword = true;
+  @override
+  void initState() {
+    super.initState();
+    checkTokenAndNavigate();
+  }
 
+  Future<void> checkTokenAndNavigate() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+    if (token != null) {
+      // Token exists, navigate to another screen (e.g., HomeScreen)
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => const LayoutPage()),
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return SafeArea(

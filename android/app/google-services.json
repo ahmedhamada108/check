@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "937012523414",
+    "project_id": "checkup-8b40e",
+    "storage_bucket": "checkup-8b40e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:937012523414:android:f38fad0400b753a2b42db7",
+        "android_client_info": {
+          "package_name": "com.checkup.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDM3ne-w5b4bC6UXxgA6tUVMfavqEPP2kI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

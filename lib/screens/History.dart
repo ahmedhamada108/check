@@ -32,6 +32,8 @@ class _HistoryState extends State<History> {
     super.initState();
     _sortColumnName = 'sub_disease_name';
     _sortAscending = false;
+    _fetchPatientHistory(); // Call the API when the page is opened
+    getPatientHistory();
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (!_willSearch) {
         if (_latestTick != null && timer.tick > _latestTick!) {
@@ -49,8 +51,6 @@ class _HistoryState extends State<History> {
         });
       }
     });
-    _fetchPatientHistory();
-    print(_fetchPatientHistory());
   }
 
   @override

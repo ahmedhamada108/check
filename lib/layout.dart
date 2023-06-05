@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:untitled1/dio/dio.dart';
 import 'package:untitled1/models/mr.dart';
 import 'package:untitled1/models/patient_history.dart';
+import 'package:untitled1/screens/History.dart';
 import 'package:untitled1/screens/Home.dart';
 
 class LayoutPage extends StatefulWidget {
@@ -12,7 +13,6 @@ class LayoutPage extends StatefulWidget {
 }
 
 class _LayoutPageState extends State<LayoutPage> {
-  List<PatientHistory>? records = [];
 
   getRecords() {
     setState(() {
@@ -25,12 +25,13 @@ class _LayoutPageState extends State<LayoutPage> {
 
   List<BottomNavigationBarItem> bottomNavigationBarItems = const [
     BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-    BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+    BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Historyt'),
     BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Account'),
   ];
 
   late List screens = [
     Home(),
+    const History(),
     // TestHistory(records: records),
     Container(
         padding: const EdgeInsets.all(1.0),

@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_web_data_table/web_data_table.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../dio/dio.dart';
+import '../layout.dart';
 import '../models/patient_history.dart';
 import '../services/sample.dart';
-
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class History extends StatefulWidget {
   const History({Key? key}) : super(key: key);
@@ -26,6 +29,7 @@ class _HistoryState extends State<History> {
   List<String> _selectedRowKeys = [];
   int _rowsPerPage = 10;
   List<PatientHistory> _patientHistory = [];
+  late InAppWebViewController _webViewController;
 
   @override
   void initState() {
@@ -107,6 +111,39 @@ class _HistoryState extends State<History> {
     return []; // Return an empty list in case of an error or no records
   }
 
+  Future<void> deletePatientHistory(List<String> ids) async {
+    Response response;
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    Dio dio = Dio();
+    dio.options.headers["Authorization"] = "Bearer ${prefs.getString('token')}";
+    try {
+      response = await dio.delete(
+        'https://project.projects-app.xyz/api/DeleteHistory',
+        data: {'IDs': ids},
+        options: Options(headers: {
+          "Accept": "application/json",
+          "Accept-Language": "en",
+          "Content-Type": "application/json", // Set the content-type to JSON
+
+        }),
+      );
+      if(response.data['status'] == true) {
+        print('Records with IDs $ids deleted successfully');
+        _selectedRowKeys.clear();
+        Fluttertoast.showToast(
+          msg: response.data['msg'].toString(),
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+        );
+      }else{
+        print(response);
+        print(ids);
+      }
+    } catch (error) {
+      print('Error deleting records with IDs $ids: $error');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -115,6 +152,7 @@ class _HistoryState extends State<History> {
           'History',
           style: TextStyle(color: Colors.lightBlueAccent),
         ),
+
       ),
       body: SingleChildScrollView(
         child: Container(
@@ -126,8 +164,7 @@ class _HistoryState extends State<History> {
               : WebDataTable(
             header: const Text(
               'Previous Checks',
-              style: TextStyle(
-                  color: Colors.blue, fontWeight: FontWeight.bold),
+              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
             ),
             actions: [
               if (_selectedRowKeys.isNotEmpty)
@@ -142,11 +179,12 @@ class _HistoryState extends State<History> {
                         color: Colors.white,
                       ),
                     ),
-                    onPressed: () {
-                      print('Delete!');
-                      setState(() {
-                        _selectedRowKeys.clear();
-                      });
+                    onPressed: () async {
+                      print(_selectedRowKeys);
+                      await deletePatientHistory(_selectedRowKeys);
+                      await _fetchPatientHistory(); // Retrieve the updated data
+                      await getPatientHistory();
+                      print('done');
                     },
                   ),
                 ),
@@ -156,6 +194,16 @@ class _HistoryState extends State<History> {
               sortAscending: _sortAscending,
               filterTexts: _filterTexts,
               columns: [
+                WebDataColumn(
+                  name: 'id',
+                  label: const Text(
+                    'ID',
+                    style: TextStyle(
+                        color: Colors.lightBlueAccent,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  dataCell: (value) => DataCell(Text('$value')),
+                ),
                 WebDataColumn(
                   name: 'disease_name',
                   label: const Text(
@@ -204,27 +252,60 @@ class _HistoryState extends State<History> {
                   label: const Text(
                     'X-Ray Image',
                     style: TextStyle(
-                        color: Colors.lightBlueAccent,
-                        fontWeight: FontWeight.bold),
+                      color: Colors.lightBlueAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   dataCell: (value) {
-                    // Replace with the widget to display the X-Ray Image
-                    return DataCell(Text('$value'));
+                    return DataCell(
+                      Padding(
+                        padding: const EdgeInsets.all(8.0), // Adjust the padding values as needed
+                        child: Image.network(
+                          '$value', // Assuming the value is the URL of the image
+                          width: 100, // Adjust the width as needed
+                          height: 100, // Adjust the height as needed
+                        ),
+                      ),
+                    );
                   },
-                  filterText: (value) {
-                    if (value is DateTime) {
-                      return '${value.year}/${value.month}/${value.day} ${value.hour}:${value.minute}:${value.second}';
-                    }
-                    return value.toString();
+                ),
+                WebDataColumn(
+                  name: 'PDF',
+                  label: const Text(
+                    'Download PDF',
+                    style: TextStyle(
+                      color: Colors.lightBlueAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  dataCell: (value) {
+                    return DataCell(
+                      ElevatedButton(
+                        onPressed: () async {
+                          String url = value; // Replace with the actual URL of the PDF file
+                          print(url);
+                          await launch(url);
+                        },
+                        child: Text(
+                          'Open PDF',
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    );
                   },
+                  filterText: (value) => '',
                 ),
               ],
               rows: _patientHistory.map((records) {
                 return {
+                  'id': records.id,
                   'disease_name': records.disease_name,
                   'sub_disease_name': records.sub_disease_name,
                   'dateTime': records.dateTime,
                   'xrayImage': records.xrayImage,
+                  'PDF': records.PDF,
                 };
               }).toList(),
               selectedRowKeys: _selectedRowKeys,
@@ -237,7 +318,7 @@ class _HistoryState extends State<History> {
                   _selectedRowKeys = keys;
                 });
               },
-              primaryKeyName: 'disease_name',
+              primaryKeyName: 'id',
             ),
             horizontalMargin: 100,
             onPageChanged: (offset) {
@@ -264,32 +345,43 @@ class _HistoryState extends State<History> {
       ),
     );
   }
+
 }
 
 class PatientHistory {
+  final int? history_id;
   final String? disease_name;
   final String? sub_disease_name;
   final String? dateTime;
   final String? xrayImage;
+  final String? PDF;
 
   PatientHistory({
+    required this.history_id,
     required this.disease_name,
     required this.sub_disease_name,
     required this.dateTime,
     required this.xrayImage,
+    required this.PDF,
+
   });
 
   factory PatientHistory.fromJson(Map<String, dynamic> json) {
     return PatientHistory(
+      history_id: json['id'] ?? 0,
       disease_name: json['disease_name'] ?? '',
       sub_disease_name: json['sub_disease_name'] ?? '',
-      dateTime: json['sub_disease_name'] ?? '',
+      dateTime: json['check_date'] ?? '',
       xrayImage: json['image'] ?? '',
+      PDF: json['PDF_URL'] ?? '',
+
     );
   }
-
+  int? get id => history_id;
   String? get getdisease_name => disease_name;
   String? get getsub_disease_name => sub_disease_name;
   String? get getDateTime => dateTime;
   String? get getXrayImage => xrayImage;
+  String? get PDF_URL => PDF;
+
 }

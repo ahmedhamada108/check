@@ -89,7 +89,14 @@ class _SettingDrawerState extends State<SettingDrawer> {
                   Icons.person_2_outlined,
                   color: Colors.cyan,
                 ),
-                onTap: () => onItemPressed(context, index: 0),
+                onTap: () async{
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditMyAccount(),
+                    ),
+                  );
+                },
               ),
               ListTile(
                 title: const Text("History tap"),
